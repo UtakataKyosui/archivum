@@ -22,10 +22,15 @@ impl Bundle {
                 Err(e) => eprintln!("Warning: {e}"),
             }
         }
-        Ok(Self { root: dir.to_path_buf(), documents })
+        Ok(Self {
+            root: dir.to_path_buf(),
+            documents,
+        })
     }
 
     pub fn concept_docs(&self) -> impl Iterator<Item = &Document> {
-        self.documents.iter().filter(|d| !d.is_index() && !d.is_log())
+        self.documents
+            .iter()
+            .filter(|d| !d.is_index() && !d.is_log())
     }
 }

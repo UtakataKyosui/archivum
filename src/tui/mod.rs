@@ -11,11 +11,10 @@ use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use crossterm::{
-    event,
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    event, execute,
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use ratatui::{backend::CrosstermBackend, Terminal};
+use ratatui::{Terminal, backend::CrosstermBackend};
 
 use app::App;
 
@@ -56,7 +55,8 @@ fn event_loop(
         terminal.draw(|f| {
             ui::draw(f, app);
             if app.effects.is_running() {
-                app.effects.process_frame(elapsed, f.buffer_mut(), app.last_full_area);
+                app.effects
+                    .process_frame(elapsed, f.buffer_mut(), app.last_full_area);
             }
         })?;
 

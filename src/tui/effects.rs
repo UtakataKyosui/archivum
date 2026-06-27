@@ -1,6 +1,6 @@
 use ratatui::{buffer::Buffer, layout::Rect, style::Color};
 use std::time::Duration;
-use tachyonfx::{fx, EffectManager, Motion};
+use tachyonfx::{EffectManager, Motion, fx};
 
 pub struct Effects {
     manager: EffectManager<String>,
@@ -20,8 +20,7 @@ impl Effects {
             return;
         }
         self.startup_done = true;
-        let effect = fx::sweep_in(Motion::LeftToRight, 8, 0, Color::Black, 700u32)
-            .with_area(area);
+        let effect = fx::sweep_in(Motion::LeftToRight, 8, 0, Color::Black, 700u32).with_area(area);
         self.manager.add_effect(effect);
     }
 

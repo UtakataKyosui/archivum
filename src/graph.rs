@@ -75,7 +75,10 @@ impl GraphData {
             for link in &doc.md_links {
                 let resolved = resolve_link(&doc.path, link, &bundle.root);
                 if let Some(target) = resolved.and_then(|p| path_to_id.get(&p).cloned()) {
-                    edges.push(GraphEdge { source: source.clone(), target });
+                    edges.push(GraphEdge {
+                        source: source.clone(),
+                        target,
+                    });
                 }
             }
         }
@@ -104,7 +107,8 @@ impl GraphData {
         let mut disp: Vec<(f64, f64)> = vec![(0.0, 0.0); n];
 
         for _ in 0..150 {
-            // Repulsive forces
+            // Repulsive forces (needs dual index: disp[i] and nodes[i] vs nodes[j])
+            #[allow(clippy::needless_range_loop)]
             for i in 0..n {
                 disp[i] = (0.0, 0.0);
                 for j in 0..n {
@@ -122,8 +126,7 @@ impl GraphData {
 
             // Attractive forces along edges
             for edge in &self.edges {
-                let (Some(&si), Some(&ti)) =
-                    (idx_map.get(&edge.source), idx_map.get(&edge.target))
+                let (Some(&si), Some(&ti)) = (idx_map.get(&edge.source), idx_map.get(&edge.target))
                 else {
                     continue;
                 };
@@ -138,13 +141,11 @@ impl GraphData {
             }
 
             // Apply displacements with temperature-capped step
-            for i in 0..n {
-                let mag = (disp[i].0 * disp[i].0 + disp[i].1 * disp[i].1)
-                    .sqrt()
-                    .max(0.01);
+            for (node, d) in self.nodes.iter_mut().zip(disp.iter()) {
+                let mag = (d.0 * d.0 + d.1 * d.1).sqrt().max(0.01);
                 let scale = mag.min(temp) / mag;
-                self.nodes[i].x = (self.nodes[i].x + disp[i].0 * scale).clamp(40.0, WIDTH - 40.0);
-                self.nodes[i].y = (self.nodes[i].y + disp[i].1 * scale).clamp(40.0, HEIGHT - 40.0);
+                node.x = (node.x + d.0 * scale).clamp(40.0, WIDTH - 40.0);
+                node.y = (node.y + d.1 * scale).clamp(40.0, HEIGHT - 40.0);
             }
             temp *= 0.95;
         }
@@ -160,8 +161,7 @@ impl GraphData {
 
     pub fn to_svg(&self) -> String {
         const PALETTE: &[&str] = &[
-            "#e94560", "#4a9eff", "#533483", "#05c46b",
-            "#ffd460", "#ff8a5b", "#a8e6cf", "#d4a5a5",
+            "#e94560", "#4a9eff", "#533483", "#05c46b", "#ffd460", "#ff8a5b", "#a8e6cf", "#d4a5a5",
         ];
 
         let mut type_color: HashMap<&str, &str> = HashMap::new();
@@ -191,7 +191,10 @@ impl GraphData {
 
         // Edges
         for edge in &self.edges {
-            if let (Some(s), Some(t)) = (node_map.get(edge.source.as_str()), node_map.get(edge.target.as_str())) {
+            if let (Some(s), Some(t)) = (
+                node_map.get(edge.source.as_str()),
+                node_map.get(edge.target.as_str()),
+            ) {
                 svg.push_str(&format!(
                     "<line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"#4a9eff\" stroke-width=\"1.2\" opacity=\"0.4\" marker-end=\"url(#arr)\"/>\n",
                     s.x, s.y, t.x, t.y
@@ -201,7 +204,10 @@ impl GraphData {
 
         // Nodes
         for node in &self.nodes {
-            let color = type_color.get(node.doc_type.as_str()).copied().unwrap_or("#888");
+            let color = type_color
+                .get(node.doc_type.as_str())
+                .copied()
+                .unwrap_or("#888");
             let label = truncate(&node.title, 18);
             let type_label = escape_xml(&node.doc_type);
             let body_label = escape_xml(&label);
@@ -223,14 +229,20 @@ impl GraphData {
         use tiny_skia::*;
 
         const PALETTE: &[[u8; 3]] = &[
-            [233, 69, 96],  [74, 158, 255], [83, 52, 131],  [5, 196, 107],
-            [255, 212, 96], [255, 138, 91], [168, 230, 207],[212, 165, 165],
+            [233, 69, 96],
+            [74, 158, 255],
+            [83, 52, 131],
+            [5, 196, 107],
+            [255, 212, 96],
+            [255, 138, 91],
+            [168, 230, 207],
+            [212, 165, 165],
         ];
 
         let w = WIDTH as u32;
         let h = HEIGHT as u32;
-        let mut pixmap = Pixmap::new(w, h)
-            .ok_or_else(|| anyhow::anyhow!("Failed to create pixmap"))?;
+        let mut pixmap =
+            Pixmap::new(w, h).ok_or_else(|| anyhow::anyhow!("Failed to create pixmap"))?;
         pixmap.fill(Color::from_rgba8(26, 26, 46, 255));
 
         let node_map: HashMap<&str, &GraphNode> =
@@ -238,7 +250,10 @@ impl GraphData {
 
         // Edges
         for edge in &self.edges {
-            if let (Some(s), Some(t)) = (node_map.get(edge.source.as_str()), node_map.get(edge.target.as_str())) {
+            if let (Some(s), Some(t)) = (
+                node_map.get(edge.source.as_str()),
+                node_map.get(edge.target.as_str()),
+            ) {
                 let mut pb = PathBuilder::new();
                 pb.move_to(s.x as f32, s.y as f32);
                 pb.line_to(t.x as f32, t.y as f32);
@@ -248,7 +263,10 @@ impl GraphData {
                     pixmap.stroke_path(
                         &path,
                         &paint,
-                        &Stroke { width: 1.5, ..Default::default() },
+                        &Stroke {
+                            width: 1.5,
+                            ..Default::default()
+                        },
                         Transform::identity(),
                         None,
                     );
@@ -269,24 +287,30 @@ impl GraphData {
         // Nodes
         for node in &self.nodes {
             let [r, g, b] = PALETTE[type_idx.get(node.doc_type.as_str()).copied().unwrap_or(0)];
-            if let Some(rect) = Rect::from_xywh(
-                node.x as f32 - 20.0,
-                node.y as f32 - 20.0,
-                40.0,
-                40.0,
-            ) {
+            if let Some(rect) =
+                Rect::from_xywh(node.x as f32 - 20.0, node.y as f32 - 20.0, 40.0, 40.0)
+            {
                 let mut pb = PathBuilder::new();
                 pb.push_oval(rect);
                 if let Some(path) = pb.finish() {
                     let mut paint = Paint::default();
                     paint.set_color_rgba8(r, g, b, 230);
-                    pixmap.fill_path(&path, &paint, FillRule::EvenOdd, Transform::identity(), None);
+                    pixmap.fill_path(
+                        &path,
+                        &paint,
+                        FillRule::EvenOdd,
+                        Transform::identity(),
+                        None,
+                    );
 
                     paint.set_color_rgba8(255, 255, 255, 180);
                     pixmap.stroke_path(
                         &path,
                         &paint,
-                        &Stroke { width: 1.5, ..Default::default() },
+                        &Stroke {
+                            width: 1.5,
+                            ..Default::default()
+                        },
                         Transform::identity(),
                         None,
                     );
@@ -306,8 +330,8 @@ fn resolve_link(from: &Path, link: &str, bundle_root: &Path) -> Option<String> {
     if link.starts_with("http://") || link.starts_with("https://") {
         return None;
     }
-    let target = if link.starts_with('/') {
-        bundle_root.join(&link[1..])
+    let target = if let Some(stripped) = link.strip_prefix('/') {
+        bundle_root.join(stripped)
     } else {
         from.parent()?.join(link)
     };
@@ -318,7 +342,9 @@ fn normalize_path(path: &Path) -> String {
     let mut result = std::path::PathBuf::new();
     for comp in path.components() {
         match comp {
-            std::path::Component::ParentDir => { result.pop(); }
+            std::path::Component::ParentDir => {
+                result.pop();
+            }
             std::path::Component::CurDir => {}
             c => result.push(c),
         }
@@ -337,7 +363,58 @@ fn truncate(s: &str, max_chars: usize) -> String {
     let mut chars = s.chars();
     let mut result: String = chars.by_ref().take(max_chars).collect();
     if chars.next().is_some() {
-        result.push_str("…");
+        result.push('…');
     }
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn normalize_path_resolves_dotdot() {
+        let p = PathBuf::from("a/b/../c");
+        assert_eq!(normalize_path(&p), "a/c");
+    }
+
+    #[test]
+    fn normalize_path_removes_curdir() {
+        let p = PathBuf::from("a/./b");
+        assert_eq!(normalize_path(&p), "a/b");
+    }
+
+    #[test]
+    fn truncate_short_unchanged() {
+        assert_eq!(truncate("hello", 18), "hello");
+    }
+
+    #[test]
+    fn truncate_long_adds_ellipsis() {
+        let s = "a".repeat(20);
+        let result = truncate(&s, 18);
+        assert!(result.ends_with('…'));
+        assert_eq!(result.chars().count(), 19); // 18 chars + ellipsis
+    }
+
+    #[test]
+    fn escape_xml_special_chars() {
+        assert_eq!(escape_xml("a & b"), "a &amp; b");
+        assert_eq!(escape_xml("<tag>"), "&lt;tag&gt;");
+        assert_eq!(escape_xml("\"quote\""), "&quot;quote&quot;");
+    }
+
+    #[test]
+    fn to_json_has_nodes_and_edges_keys() {
+        let bundle = Bundle {
+            root: PathBuf::from("."),
+            documents: vec![],
+        };
+        let data = GraphData::from_bundle(&bundle);
+        let json = data.to_json().unwrap();
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert!(v.get("nodes").is_some());
+        assert!(v.get("edges").is_some());
+    }
 }

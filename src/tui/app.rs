@@ -6,8 +6,7 @@ use std::{collections::BTreeMap, path::PathBuf};
 use crate::document::Document;
 
 use super::{
-    browser::FileBrowser, editor::MarkdownEditor, effects::Effects,
-    frontmatter::FrontmatterEditor,
+    browser::FileBrowser, editor::MarkdownEditor, effects::Effects, frontmatter::FrontmatterEditor,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -208,11 +207,11 @@ impl App {
             KeyCode::Up | KeyCode::Char('k') => self.browser.move_up(),
             KeyCode::Down | KeyCode::Char('j') => self.browser.move_down(),
             KeyCode::Enter => {
-                if let Some(path) = self.browser.selected_path().cloned() {
-                    if let Err(e) = self.open_file(path) {
-                        self.status_message = format!("Error: {e}");
-                        self.status_is_error = true;
-                    }
+                if let Some(path) = self.browser.selected_path().cloned()
+                    && let Err(e) = self.open_file(path)
+                {
+                    self.status_message = format!("Error: {e}");
+                    self.status_is_error = true;
                 }
             }
             KeyCode::Esc => {
@@ -227,7 +226,13 @@ impl App {
 /// Extract YAML fields that are not in STANDARD_KEYS from raw file content.
 fn extract_extra_yaml_fields(content: &str) -> BTreeMap<String, serde_yaml::Value> {
     const STANDARD_KEYS: &[&str] = &[
-        "id", "type", "title", "description", "resource", "tags", "timestamp",
+        "id",
+        "type",
+        "title",
+        "description",
+        "resource",
+        "tags",
+        "timestamp",
     ];
 
     let mut extra = BTreeMap::new();
@@ -244,12 +249,14 @@ fn extract_extra_yaml_fields(content: &str) -> BTreeMap<String, serde_yaml::Valu
     }
     let yaml_block = &after_open[..end];
 
-    if let Ok(serde_yaml::Value::Mapping(map)) = serde_yaml::from_str::<serde_yaml::Value>(yaml_block) {
+    if let Ok(serde_yaml::Value::Mapping(map)) =
+        serde_yaml::from_str::<serde_yaml::Value>(yaml_block)
+    {
         for (k, v) in map {
-            if let serde_yaml::Value::String(key) = k {
-                if !STANDARD_KEYS.contains(&key.as_str()) {
-                    extra.insert(key, v);
-                }
+            if let serde_yaml::Value::String(key) = k
+                && !STANDARD_KEYS.contains(&key.as_str())
+            {
+                extra.insert(key, v);
             }
         }
     }

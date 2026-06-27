@@ -1,11 +1,11 @@
 use crate::document::Frontmatter;
 use crossterm::event::{Event, KeyCode, KeyModifiers};
 use ratatui::{
+    Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
-    Frame,
 };
 use std::collections::BTreeMap;
 use tui_textarea::TextArea;
@@ -13,25 +13,31 @@ use tui_textarea::TextArea;
 use super::theme;
 
 const STANDARD_KEYS: &[&str] = &[
-    "id", "type", "title", "description", "resource", "tags", "timestamp",
+    "id",
+    "type",
+    "title",
+    "description",
+    "resource",
+    "tags",
+    "timestamp",
 ];
 
 // Display labels for standard fields (right-aligned in 12 chars)
 const FIELD_LABELS: &[&str] = &[
     "id",
-    "type *",      // * = required
+    "type *", // * = required
     "title",
     "description",
     "resource",
-    "tags",        // hint shown in hint bar when focused
-    "timestamp",   // auto-updated on save
+    "tags",      // hint shown in hint bar when focused
+    "timestamp", // auto-updated on save
 ];
 
 pub struct FrontmatterEditor {
-    pub textareas: Vec<TextArea<'static>>,             // 7 standard fields
+    pub textareas: Vec<TextArea<'static>>, // 7 standard fields
     pub extra_fields: Vec<(String, TextArea<'static>)>, // arbitrary extra fields
-    pub active_field: usize, // 0..7 = standard, 7+ = extra
-    new_key_input: Option<TextArea<'static>>,           // when Ctrl+N is pressed
+    pub active_field: usize,               // 0..7 = standard, 7+ = extra
+    new_key_input: Option<TextArea<'static>>, // when Ctrl+N is pressed
 }
 
 impl FrontmatterEditor {
@@ -188,8 +194,9 @@ impl FrontmatterEditor {
             n_content += 1;
         }
 
-        let mut constraints: Vec<Constraint> = (0..n_content).map(|_| Constraint::Length(1)).collect();
-        constraints.push(Constraint::Min(0));    // spacer
+        let mut constraints: Vec<Constraint> =
+            (0..n_content).map(|_| Constraint::Length(1)).collect();
+        constraints.push(Constraint::Min(0)); // spacer
         constraints.push(Constraint::Length(1)); // hint bar
 
         let rows = Layout::default()
@@ -202,7 +209,13 @@ impl FrontmatterEditor {
         // ── Standard fields ──────────────────────────────────────────────
         for i in 0..STANDARD_KEYS.len() {
             let is_active = focused && i == self.active_field;
-            render_field_row(f, &mut self.textareas[i], FIELD_LABELS[i], rows[i], is_active);
+            render_field_row(
+                f,
+                &mut self.textareas[i],
+                FIELD_LABELS[i],
+                rows[i],
+                is_active,
+            );
         }
 
         let mut row_cursor = STANDARD_KEYS.len();
@@ -312,7 +325,12 @@ impl FrontmatterEditor {
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 fn ta_val(ta: &TextArea<'static>) -> String {
-    ta.lines().first().cloned().unwrap_or_default().trim().to_string()
+    ta.lines()
+        .first()
+        .cloned()
+        .unwrap_or_default()
+        .trim()
+        .to_string()
 }
 
 fn value_to_display(v: &serde_yaml::Value) -> String {
@@ -321,7 +339,10 @@ fn value_to_display(v: &serde_yaml::Value) -> String {
         serde_yaml::Value::Number(n) => n.to_string(),
         serde_yaml::Value::Bool(b) => b.to_string(),
         serde_yaml::Value::Null => String::new(),
-        other => serde_yaml::to_string(other).unwrap_or_default().trim().to_string(),
+        other => serde_yaml::to_string(other)
+            .unwrap_or_default()
+            .trim()
+            .to_string(),
     }
 }
 

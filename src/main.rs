@@ -1,11 +1,8 @@
-mod bundle;
 mod cli;
-mod document;
-mod graph;
 mod tui;
-mod validate;
 
 use anyhow::Result;
+use archivum::{bundle, document, graph, validate};
 use chrono::Utc;
 use clap::Parser;
 use cli::{Cli, Commands};
@@ -15,16 +12,18 @@ use uuid::Uuid;
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Commands::Create { doc_type, title, output } => cmd_create(&doc_type, &title, output),
-        Commands::Validate { path } => {
-            cmd_validate(&path.unwrap_or_else(|| PathBuf::from(".")))
-        }
-        Commands::Bundle { dir } => {
-            cmd_bundle(&dir.unwrap_or_else(|| PathBuf::from(".")))
-        }
-        Commands::Graph { dir, format, output } => {
-            cmd_graph(&dir.unwrap_or_else(|| PathBuf::from(".")), &format, output)
-        }
+        Commands::Create {
+            doc_type,
+            title,
+            output,
+        } => cmd_create(&doc_type, &title, output),
+        Commands::Validate { path } => cmd_validate(&path.unwrap_or_else(|| PathBuf::from("."))),
+        Commands::Bundle { dir } => cmd_bundle(&dir.unwrap_or_else(|| PathBuf::from("."))),
+        Commands::Graph {
+            dir,
+            format,
+            output,
+        } => cmd_graph(&dir.unwrap_or_else(|| PathBuf::from(".")), &format, output),
         Commands::Edit { file } => tui::run_editor(file),
     }
 }
@@ -86,14 +85,16 @@ fn cmd_bundle(dir: &std::path::Path) -> Result<()> {
     let log_path = dir.join("log.md");
     if log_path.exists() {
         let existing = fs::read_to_string(&log_path)?;
-        let insert_at = frontmatter_end(&existing).unwrap_or(0);
+        let insert_at = document::frontmatter_end(&existing).unwrap_or(0);
         let head = existing[..insert_at].trim_end();
         let tail = existing[insert_at..].trim_start();
         fs::write(&log_path, format!("{head}\n\n{entry}{tail}"))?;
     } else {
         fs::write(
             &log_path,
-            format!("---\ntype: \"ChangeLog\"\ntitle: \"Change Log\"\ndescription: \"このバンドルの変更履歴\"\ntimestamp: \"{ts}\"\n---\n\n{entry}"),
+            format!(
+                "---\ntype: \"ChangeLog\"\ntitle: \"Change Log\"\ndescription: \"このバンドルの変更履歴\"\ntimestamp: \"{ts}\"\n---\n\n{entry}"
+            ),
         )?;
     }
     println!("Updated: {}", log_path.display());
@@ -122,21 +123,4 @@ fn cmd_graph(dir: &std::path::Path, format: &str, output: Option<PathBuf>) -> Re
         g.edges.len()
     );
     Ok(())
-}
-
-/// Returns the byte offset just after the closing `---\n` of the YAML frontmatter.
-fn frontmatter_end(content: &str) -> Option<usize> {
-    if !content.starts_with("---") {
-        return None;
-    }
-    let after = &content[3..];
-    let pos = after.find("\n---")?;
-    // +3 for opening "---", +pos for content, +4 for "\n---"
-    let end = 3 + pos + 4;
-    // Skip optional trailing \n after ---
-    if content[end..].starts_with('\n') {
-        Some(end + 1)
-    } else {
-        Some(end)
-    }
 }

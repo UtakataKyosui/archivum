@@ -1,8 +1,8 @@
 use ratatui::{
+    Frame,
     layout::Rect,
     style::Style,
     widgets::{Block, Borders, List, ListItem, ListState},
-    Frame,
 };
 use std::path::{Path, PathBuf};
 

@@ -15,7 +15,10 @@ pub fn border_unfocused() -> Style {
 }
 
 pub fn status_bar() -> Style {
-    Style::default().bg(BRAND_BLUE).fg(FG).add_modifier(Modifier::BOLD)
+    Style::default()
+        .bg(BRAND_BLUE)
+        .fg(FG)
+        .add_modifier(Modifier::BOLD)
 }
 
 pub fn header_md() -> Style {

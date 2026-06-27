@@ -1,9 +1,9 @@
 use crossterm::event::Event;
 use ratatui::{
+    Frame,
     layout::Rect,
     style::{Color, Modifier, Style},
     widgets::{Block, Borders},
-    Frame,
 };
 use tui_textarea::TextArea;
 
@@ -35,7 +35,8 @@ impl MarkdownEditor {
     }
 
     pub fn handle_input(&mut self, event: &Event) -> bool {
-        self.textarea.input(tui_textarea::Input::from(event.clone()))
+        self.textarea
+            .input(tui_textarea::Input::from(event.clone()))
     }
 
     pub fn render(&mut self, f: &mut Frame, area: Rect, focused: bool) {
