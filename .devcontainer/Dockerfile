@@ -17,7 +17,9 @@ RUN curl -L https://releases.nixos.org/nix/nix-2.30.1/install | sh -s -- --no-da
 
 ENV PATH="/home/${USERNAME}/.nix-profile/bin:${PATH}"
 
+RUN echo 'eval "$(direnv hook bash)"' >> /home/utakata/.bashrc
+
 RUN mkdir -p ~/.config/nix \
      && printf "experimental-features = nix-command flakes\n" \
-     > ~/.config/nix/nix.conf
-
+     > ~/.config/nix/nix.conf \
+     && nix profile install nixpkgs#direnv

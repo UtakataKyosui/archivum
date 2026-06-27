@@ -9,8 +9,11 @@
         "vscode": {
             "extensions": [
                 "bbenoist.Nix",
-                "visualjj.visualjj"
+                "visualjj.visualjj",
+                "Zerotaskx.rust-extension-pack",
+                "rust-lang.rust-analyzer"
             ]
         }
-    }
+    },
+    "postCreateCommand": "cd ${containerWorkspaceFolder} && direnv allow"
 }
