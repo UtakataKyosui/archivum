@@ -67,6 +67,9 @@
         nix-claude-code.packages.${system}.default
 
         gh
+        
+        nodejs
+        pnpm 
       ];
     };
   };

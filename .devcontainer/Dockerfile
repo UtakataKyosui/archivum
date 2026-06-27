@@ -15,6 +15,8 @@ USER ${USERNAME}
 
 RUN curl -L https://releases.nixos.org/nix/nix-2.30.1/install | sh -s -- --no-daemon
 
+RUN curl -fsSL https://antigravity.google/cli/install.sh | bash
+
 ENV PATH="/home/${USERNAME}/.nix-profile/bin:${PATH}"
 
 # Configure binary caches BEFORE installing any packages so all downloads benefit from them
