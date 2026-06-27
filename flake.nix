@@ -4,9 +4,10 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     rust-overlay.url = "github:oxalica/rust-overlay";
+    nix-claude-code.url = "github:ryoppippi/nix-claude-code";
   };
 
-  outputs = { self, nixpkgs, rust-overlay }:
+  outputs = { self, nixpkgs, rust-overlay, nix-claude-code}:
   let
     system = "aarch64-linux";
 
@@ -22,6 +23,9 @@
       packages = with pkgs; [
         (rust-bin.stable.latest.default)
 
+        direnv
+        nix-direnv
+        
         rust-analyzer
 
         git
@@ -48,6 +52,7 @@
         cargo-audit
 
         bacon
+        nix-claude-code.packages.${system}.default
       ];
     };
   };
