@@ -1,0 +1,8 @@
+[package]
+name = "archivum"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+fronma = "0.2.0"
+serde = {version = "1.0.228",features = ["derive"]}
