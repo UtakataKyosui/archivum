@@ -17,6 +17,13 @@ pub fn validate_path(path: &Path) -> Result<Vec<ValidationResult>> {
         for entry in WalkDir::new(path)
             .follow_links(false)
             .into_iter()
+            .filter_entry(|e| {
+                e.depth() == 0
+                    || e.file_name()
+                        .to_str()
+                        .map(|s| !s.starts_with('.'))
+                        .unwrap_or(true)
+            })
             .filter_map(|e| e.ok())
             .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
         {
