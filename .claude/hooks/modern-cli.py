@@ -5,6 +5,7 @@ PreToolUse hook: rewrite legacy CLI commands to modern alternatives.
   find → fd    (modern find)
   grep → rg    (modern grep / ripgrep)
   cat  → bat   (modern cat)
+  rm   → rip   (modern rm / sends to graveyard instead of permanent delete)
 """
 
 import json
@@ -46,6 +47,22 @@ _GREP_UNSUPPORTED = frozenset({
 
 # grep options removed because rg is recursive by default
 _GREP_REMOVE = frozenset({'-r', '-R', '--recursive'})
+
+# rm options that make conversion to rip unsafe
+_RM_BAIL_OPTIONS = frozenset({
+    '-f', '--force',
+    '-i', '--interactive',
+    '-I',
+    '--no-preserve-root',
+    '--one-file-system',
+})
+# Single chars in combined flags (e.g. -rf) that make conversion unsafe
+_RM_BAIL_CHARS = frozenset({'f', 'i', 'I'})
+
+# rm options removed because rip handles them by default (moves to graveyard, recursive)
+_RM_REMOVE = frozenset({'-r', '-R', '--recursive', '-d', '--dir', '-v', '--verbose'})
+# Single chars in combined flags that are safe to drop
+_RM_REMOVE_CHARS = frozenset({'r', 'R', 'd', 'v'})
 
 
 def rewrite_command(cmd: str) -> str | None:
@@ -91,6 +108,9 @@ def _rewrite_segment(segment: str) -> str:
     if name == 'find':
         return indent + _rewrite_find(stripped, tokens)
 
+    if name == 'rm':
+        return indent + _rewrite_rm(stripped, tokens)
+
     return segment
 
 
@@ -128,6 +148,41 @@ def _rewrite_cat(stripped: str, tokens: list) -> str:
         return stripped
 
     return 'bat' + stripped[len('cat'):]
+
+
+# ── rm → rip ───────────────────────────────────────────────────────────────
+
+def _rewrite_rm(stripped: str, tokens: list) -> str:
+    args = tokens[1:]
+
+    filtered = []
+    changed = False
+    for a in args:
+        if a in _RM_BAIL_OPTIONS:
+            return stripped
+        if a in _RM_REMOVE:
+            changed = True
+            continue
+        # Handle combined short flags like -rf, -rv
+        if a.startswith('-') and not a.startswith('--') and len(a) > 2:
+            chars = a[1:]
+            if any(c in _RM_BAIL_CHARS for c in chars):
+                return stripped
+            remaining = ''.join(c for c in chars if c not in _RM_REMOVE_CHARS)
+            if remaining != chars:
+                changed = True
+            if remaining:
+                filtered.append(f'-{remaining}')
+            # else: entire combined flag group dropped
+        else:
+            filtered.append(a)
+
+    if not changed:
+        return 'rip' + stripped[len('rm'):]
+
+    if filtered:
+        return 'rip ' + ' '.join(shlex.quote(a) for a in filtered)
+    return 'rip'
 
 
 # ── find → fd ──────────────────────────────────────────────────────────────
