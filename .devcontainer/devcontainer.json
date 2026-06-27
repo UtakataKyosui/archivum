@@ -11,9 +11,15 @@
                 "bbenoist.Nix",
                 "visualjj.visualjj",
                 "Zerotaskx.rust-extension-pack",
-                "rust-lang.rust-analyzer"
-            ]
+                "rust-lang.rust-analyzer",
+                "mkhl.direnv"
+            ],
+            "settings": {
+                "terminal.integrated.inheritEnv": true,
+                "rust-analyzer.server.path": "${containerWorkspaceFolder}/.direnv/bin/rust-analyzer"
+            }
         }
     },
-    "postCreateCommand": "cd ${containerWorkspaceFolder} && direnv allow"
+    "postCreateCommand": "cd ${containerWorkspaceFolder} && direnv allow",
+    "postStartCommand": "bash -lc 'cd ${containerWorkspaceFolder} && eval \"$(direnv export bash)\" && mkdir -p .direnv/bin && ln -sf \"$(which rust-analyzer)\" .direnv/bin/rust-analyzer'"
 }

@@ -20,6 +20,14 @@
     };
   in {
     devShells.${system}.default = pkgs.mkShell {
+      shellHook = ''
+        eval "$(atuin init bash)"
+        eval "$(atuin ai init)"
+        eval "$(atuin gen-completions --shell bash)"
+        eval "$(gh wheel completion bash)"
+        source <(jj util completion bash)
+      '';
+
       packages = with pkgs; [
         (rust-bin.stable.latest.default)
 
@@ -37,6 +45,9 @@
         ripgrep
         bat
         atuin
+        rm-improved
+
+        python3
 
         jq
         yq-go
