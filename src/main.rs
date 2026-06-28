@@ -2,10 +2,10 @@ mod cli;
 mod tui;
 
 use anyhow::Result;
-use scrinium::{bundle, document, graph, validate};
 use chrono::Utc;
 use clap::Parser;
 use cli::{Cli, Commands};
+use scrinium::{bundle, document, graph, validate};
 use std::{fs, path::PathBuf};
 use uuid::Uuid;
 
