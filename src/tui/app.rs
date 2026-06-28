@@ -3,7 +3,7 @@ use crossterm::event::{Event, KeyCode, KeyModifiers};
 use ratatui::layout::Rect;
 use std::{collections::BTreeMap, path::PathBuf};
 
-use crate::document::Document;
+use crate::document::{Document, STANDARD_KEYS, frontmatter_yaml_block};
 
 use super::{
     browser::FileBrowser, editor::MarkdownEditor, effects::Effects, frontmatter::FrontmatterEditor,
@@ -34,11 +34,16 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(initial_file: Option<PathBuf>) -> Result<Self> {
-        let dir = initial_file
-            .as_ref()
-            .and_then(|p| p.parent().map(|d| d.to_path_buf()))
-            .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+    pub fn new(path: Option<PathBuf>) -> Result<Self> {
+        let cwd = std::env::current_dir().unwrap_or_default();
+        let (dir, initial_file) = match path {
+            None => (cwd, None),
+            Some(p) if p.is_dir() => (p, None),
+            Some(p) => {
+                let dir = p.parent().map(|d| d.to_path_buf()).unwrap_or(cwd);
+                (dir, Some(p))
+            }
+        };
 
         let mut app = Self {
             mode: AppMode::Browse,
@@ -56,8 +61,8 @@ impl App {
             last_status_area: Rect::default(),
         };
 
-        if let Some(path) = initial_file {
-            app.open_file(path)?;
+        if let Some(file) = initial_file {
+            app.open_file(file)?;
         }
         Ok(app)
     }
@@ -225,29 +230,11 @@ impl App {
 
 /// Extract YAML fields that are not in STANDARD_KEYS from raw file content.
 fn extract_extra_yaml_fields(content: &str) -> BTreeMap<String, serde_yaml::Value> {
-    const STANDARD_KEYS: &[&str] = &[
-        "id",
-        "type",
-        "title",
-        "description",
-        "resource",
-        "tags",
-        "timestamp",
-    ];
-
     let mut extra = BTreeMap::new();
 
-    // Find frontmatter block between --- delimiters
-    let trimmed = content.trim_start();
-    if !trimmed.starts_with("---") {
+    let Some(yaml_block) = frontmatter_yaml_block(content) else {
         return extra;
-    }
-    let after_open = &trimmed[3..];
-    let end = after_open.find("\n---").unwrap_or(0);
-    if end == 0 {
-        return extra;
-    }
-    let yaml_block = &after_open[..end];
+    };
 
     if let Ok(serde_yaml::Value::Mapping(map)) =
         serde_yaml::from_str::<serde_yaml::Value>(yaml_block)
