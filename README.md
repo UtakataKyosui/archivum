@@ -175,6 +175,60 @@ Standard multi-line text editing via `tui-textarea`. Markdown headings (`#`, `##
 
 ---
 
+## Claude Code Skills
+
+scrinium is the canonical source for the following [Claude Code](https://claude.ai/code) Agent Skills.
+Install any skill by copying its directory to `~/.claude/skills/`.
+
+```bash
+git clone https://github.com/UtakataKyosui/scrinium /tmp/scrinium
+cp -r /tmp/scrinium/.claude/skills/<skill-name> ~/.claude/skills/
+```
+
+### `okf` — OKF document authoring
+
+Helps Claude create, validate, and bundle Open Knowledge Format documents directly in your knowledge directory.
+
+| Mode | What it does |
+|---|---|
+| `create` | Generate a new OKF Markdown document from a template |
+| `validate` | Check frontmatter compliance across a file or directory |
+| `bundle` | Auto-generate `index.md` (catalog) and `log.md` (changelog) |
+| `help` | Show OKF spec overview |
+
+```bash
+cp -r /tmp/scrinium/.claude/skills/okf ~/.claude/skills/
+```
+
+```
+/okf create Concept "Rust Ownership"
+/okf validate ./docs/
+/okf bundle ./knowledge/
+```
+
+### `gh-wheel` — gh-wheel CLI agent
+
+Teaches Claude to operate [gh-wheel](https://github.com/UtakataKyosui/gh-wheel) — the unified gh extension for Issue-Driven development. The skill is published via `gh skill` from the `skills/` directory of the gh-wheel repository (the `gh wheel skill` command in the extension itself is deprecated).
+
+| Capability | Commands |
+|---|---|
+| Task management | `task`, `task today`, `task next`, `task close` |
+| Code review | `review prompt`, `review validate`, `review post`, `review threads`, `review reply` |
+| Dependency graph | `graph` |
+| OKR metrics | `okr metrics` |
+
+```bash
+gh skill install UtakataKyosui/gh-wheel gh-wheel
+```
+
+```
+/gh-wheel — list my open PRs and assigned Issues
+/gh-wheel — plan today's work with a 4h budget
+/gh-wheel — run an AI review on PR #42 and post it
+```
+
+---
+
 ## Contributing
 
 Bug reports, feature requests, and pull requests are welcome.
